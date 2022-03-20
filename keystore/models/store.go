@@ -1,19 +1,21 @@
 package models
+
 import (
-	"sync"
-	"strings"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/spf13/cast"
-	"github.com/beego/beego/v2/core/logs"
+	"strings"
+	"sync"
+	//"github.com/beego/beego/v2/core/logs"
 )
 
 type KeyValueData struct {
-    mu       sync.Mutex
-    store map[string]string
+	mu    sync.Mutex
+	store map[string]string
 }
 
 var KeyValueStore = initializeDatastore()
 
-type dataOperations interface{
+type dataOperations interface {
 	GetKey() string
 	SetKey() string
 	SearchPrefix() string
@@ -23,14 +25,18 @@ type dataOperations interface{
 func initializeDatastore() KeyValueData {
 	data := KeyValueData{}
 	data.store = make(map[string]string)
-	data.store["sample"] = "sample Value"
+	if beego.BConfig.RunMode == "dev" {
+		data.store["abc-1"] = "abc-1 Value"
+		data.store["abc-2"] = "abc-2 Value"
+		data.store["xyz-1"] = "xyz-1 Value"
+		data.store["xyz-2"] = "xyz-2 Value"
+	}
 	return data
 }
 
-
 func (s *KeyValueData) GetKey(key string) string {
-	log := logs.NewLogger()
-	log.Debug("Getting Key from key stroe ", key)
+	// log := logs.NewLogger()
+	// log.Debug("Getting Key from key stroe ", key)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if val, ok := s.store[key]; ok {
@@ -46,7 +52,6 @@ func (s *KeyValueData) SetKey(key, value string) bool {
 	s.store[key] = cast.ToString(value)
 	return true
 }
-
 
 func (s *KeyValueData) SearchSuffix(suffix string) []string {
 	//log := logs.NewLogger()

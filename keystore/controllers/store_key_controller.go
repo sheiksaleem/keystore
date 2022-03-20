@@ -1,8 +1,10 @@
 package controllers
+
 import (
-	"github.com/beego/beego/v2/core/logs"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/spf13/cast"
 	"net/http"
 )
 
@@ -11,37 +13,28 @@ type StoreKeyController struct {
 }
 
 type keyValue struct {
-	Key string `json:"key"`
-	Value string `json:"value"`
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
 }
 
 func (c *StoreKeyController) GetKey() {
-	log := logs.NewLogger()
 	key := c.Ctx.Input.Query(":key")
 	var err error
 	var statusCode int
-	fmt.Println("Here is the key", key)
-	log.Debug(fmt.Sprintf("request key is :%s", key))
 
 	defer func() {
 		c.handleResponse(err, statusCode)
 	}()
-
 	value := c.GetKeyFromStore(key)
-	log.Info(fmt.Sprintf("value is :%s", value))
-	c.Data["JSON"] = map[string]string{key: value}
-	c.ServeJSON()
+	c.Data["json"] = &Response{Message: "Successfully retrived value", Data: map[string]string{key: value}}
 }
-
 
 func (c *StoreKeyController) SetKey() {
 	log := logs.NewLogger()
 	payload := c.Ctx.Input.RequestBody
 	var err error
 	var statusCode int
-
 	var data keyValue
-	fmt.Println("Here is the body", payload)
 
 	defer func() {
 		c.handleResponse(err, statusCode)
@@ -53,27 +46,34 @@ func (c *StoreKeyController) SetKey() {
 		statusCode = http.StatusBadRequest
 		return
 	}
-	//value := c.GetKeyFromStore(key)
-	c.SetKeyAtStore(data.Key, data.Value)
-	c.Data["JSON"] = map[string]string{data.Key: data.Value}
-	c.ServeJSON()
+	c.SetKeyAtStore(data.Key, cast.ToString(data.Value))
+	c.Data["json"] = &Response{Message: "Successfully added key and value", Data: map[string]string{data.Key: cast.ToString(data.Value)}}
 }
-
 
 func (c *StoreKeyController) SearchKey() {
-	log := logs.NewLogger()
-	key := c.Ctx.Input.Query(":key")
-	fmt.Println("Here is the key", key)
-	log.Debug(fmt.Sprintf("request key is :%s", key))
-	value := c.GetKeyFromStore(key)
-	c.Data["JSON"] = map[string]string{key: value}
-	c.ServeJSON()
-}
+	queryParams := c.Ctx.Request.URL.Query()
+	suffix := cast.ToString(queryParams.Get("suffix"))
+	prefix := cast.ToString(queryParams.Get("prefix"))
+	var result []string
+	var err error
+	var statusCode int
 
+	defer func() {
+		c.handleResponse(err, statusCode)
+	}()
+	if suffix != "" {
+		result = c.SearchSuffixAtStore(suffix)
+		fmt.Println(result)
+	} else if prefix != "" {
+		result = c.SearchPrefixAtStore(prefix)
+
+	}
+	c.Data["json"] = &Response{Message: "Successfully added key and value", Data: result}
+}
 
 func (c *StoreKeyController) handleResponse(err error, statusCode int) {
 	if err != nil {
-		c.Data["JSON"] = map[string]string{"error": err.Error()}
+		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
 	c.ServeJSON()
 }

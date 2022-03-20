@@ -1,16 +1,14 @@
 package main
 
 import (
-	_ "keystore/routers"
-	beego "github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/core/logs"
+	beego "github.com/beego/beego/v2/server/web"
+	_ "keystore/routers"
 )
-
 
 func main() {
 	beego.BConfig.Log.AccessLogs = true
 	logs.SetLogger(logs.AdapterConsole)
-	beego.Run("192.168.244.128")
-} 
 
-
+	beego.Run(beego.BConfig.Listen.HTTPAddr)
+}
