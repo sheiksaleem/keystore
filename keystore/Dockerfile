@@ -3,9 +3,9 @@ WORKDIR /app
 COPY . .
 RUN go mod download
 
-EXPOSE 8000
+EXPOSE 8080
 # Install server application
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o main .
 
-CMD ["/main"]
+CMD ["/app/main"]

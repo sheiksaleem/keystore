@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keystore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: api
+      service: keystore
+  minReadySeconds: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        type: api
+        service: keystore
+        language: go
+    spec:
+      containers:
+      - name: api
+        image: saleem/keystore
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8080
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keystore
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: keystore
+            port:
+              number: 8080
